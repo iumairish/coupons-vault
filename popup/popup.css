@@ -235,6 +235,13 @@ textarea { resize: vertical; }
   letter-spacing: 0.05em;
 }
 
+.coupon-item__code-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
 .coupon-item__meta {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);

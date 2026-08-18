@@ -29,7 +29,7 @@
         "*://*.zalando.com/*",
         "*://*.zalando.de/*"
       ],
-      "js": ["lib/matcher.js", "content/content-script.js"],
+      "js": ["lib/matcher.js", "lib/fieldDetector.js", "content/content-script.js"],
       "css": ["content/badge.css"],
       "run_at": "document_idle"
     }

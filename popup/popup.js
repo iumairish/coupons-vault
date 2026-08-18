@@ -137,7 +137,10 @@ function makeCouponItem(c, state) {
         <button class="btn btn--danger btn--sm" data-action="delete" data-id="${c.id}">✕</button>
       </div>
     </div>
-    <span class="coupon-item__code">${esc(c.code)}</span>
+    <div class="coupon-item__code-row">
+      <span class="coupon-item__code">${esc(c.code)}</span>
+      <button class="btn btn--ghost btn--sm" data-action="copy" data-id="${c.id}" data-code="${esc(c.code)}">Copy</button>
+    </div>
     <div class="coupon-item__meta">
       ${c.discountValue ? `<span>${formatDiscount(c)}</span>` : ''}
       ${expiryLabel}
@@ -150,6 +153,7 @@ function makeCouponItem(c, state) {
     if (!btn) return;
     const { action, id } = btn.dataset;
     if (action === 'edit') openForm(id);
+    if (action === 'copy') copyCode(btn);
     if (action === 'mark-used') markUsed(id);
     if (action === 'delete') deleteCoupon(id);
   });
@@ -200,7 +204,6 @@ function openForm(id) {
       couponForm.minPurchase.value = c.minPurchase ?? '';
       couponForm.brandUrls.value = c.brandUrls ?? '';
       couponForm.terms.value = c.terms ?? '';
-      couponForm.sourceLink.value = c.sourceLink ?? '';
     });
   }
 
@@ -228,7 +231,6 @@ async function handleSave(e) {
     minPurchase: data.minPurchase ? parseFloat(data.minPurchase) : null,
     brandUrls: data.brandUrls.trim() || null,
     terms: data.terms.trim() || null,
-    sourceLink: data.sourceLink.trim() || null,
   };
 
   await StorageProvider.save({ ...coupon, id: editingId });
@@ -237,6 +239,14 @@ async function handleSave(e) {
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
+
+function copyCode(btn) {
+  const code = btn.dataset.code;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+}
 
 async function markUsed(id) {
   const coupons = await StorageProvider.getAll();
