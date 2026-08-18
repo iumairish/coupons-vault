@@ -1,0 +1,220 @@
+// Popup entry point — wires up UI events and initial render
+
+const formSection = document.getElementById('form-section');
+const listSection = document.getElementById('list-section');
+const couponList = document.getElementById('coupon-list');
+const emptyState = document.getElementById('empty-state');
+const couponForm = document.getElementById('coupon-form');
+
+let editingId = null; // null = adding new, string = editing existing
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', init);
+
+async function init() {
+  await renderCouponList();
+
+  document.getElementById('btn-add').addEventListener('click', () => openForm(null));
+  document.getElementById('btn-cancel').addEventListener('click', closeForm);
+  document.getElementById('btn-export').addEventListener('click', handleExport);
+  document.getElementById('import-file').addEventListener('change', handleImport);
+  couponForm.addEventListener('submit', handleSave);
+}
+
+// ── List rendering ────────────────────────────────────────────────────────────
+
+async function renderCouponList() {
+  const coupons = await StorageProvider.getAll();
+  couponList.innerHTML = '';
+
+  if (coupons.length === 0) {
+    emptyState.classList.remove('hidden');
+    return;
+  }
+  emptyState.classList.add('hidden');
+
+  const now = new Date();
+  const warnMs = 3 * 24 * 60 * 60 * 1000; // 3 days
+
+  const active = [];
+  const expired = [];
+
+  for (const c of coupons) {
+    if (c.status === 'expired' || (c.expiryDate && new Date(c.expiryDate) < now)) {
+      expired.push(c);
+    } else {
+      active.push(c);
+    }
+  }
+
+  // Sort active: soonest expiry first, then no-expiry at the end
+  active.sort((a, b) => {
+    if (!a.expiryDate && !b.expiryDate) return 0;
+    if (!a.expiryDate) return 1;
+    if (!b.expiryDate) return -1;
+    return new Date(a.expiryDate) - new Date(b.expiryDate);
+  });
+
+  if (active.length > 0) {
+    couponList.appendChild(makeSectionLabel('Active'));
+    for (const c of active) {
+      const expiresAt = c.expiryDate ? new Date(c.expiryDate) : null;
+      const isWarn = expiresAt && (expiresAt - now) <= warnMs && expiresAt > now;
+      couponList.appendChild(makeCouponItem(c, isWarn ? 'warning' : 'active'));
+    }
+  }
+
+  if (expired.length > 0) {
+    couponList.appendChild(makeSectionLabel('Expired'));
+    for (const c of expired) {
+      couponList.appendChild(makeCouponItem(c, 'expired'));
+    }
+  }
+}
+
+function makeSectionLabel(text) {
+  const el = document.createElement('p');
+  el.className = 'list-section-label';
+  el.textContent = text;
+  return el;
+}
+
+function makeCouponItem(c, state) {
+  const item = document.createElement('div');
+  item.className = 'coupon-item' + (state !== 'active' ? ` coupon-item--${state}` : '');
+  if (c.status === 'used') item.classList.add('coupon-item--used');
+
+  const expiryLabel = formatExpiry(c.expiryDate, state);
+
+  item.innerHTML = `
+    <div class="coupon-item__header">
+      <span class="coupon-item__brand">${esc(c.brand)}</span>
+      <div class="coupon-item__actions">
+        <button class="btn btn--ghost btn--sm" data-action="edit" data-id="${c.id}">Edit</button>
+        <button class="btn btn--ghost btn--sm" data-action="mark-used" data-id="${c.id}"
+          ${c.status === 'used' ? 'disabled' : ''}>Used</button>
+        <button class="btn btn--danger btn--sm" data-action="delete" data-id="${c.id}">✕</button>
+      </div>
+    </div>
+    <span class="coupon-item__code">${esc(c.code)}</span>
+    <div class="coupon-item__meta">
+      ${c.discountValue ? `<span>${formatDiscount(c)}</span>` : ''}
+      ${expiryLabel}
+      ${c.minPurchase ? `<span>Min. €${c.minPurchase}</span>` : ''}
+    </div>
+  `;
+
+  item.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const { action, id } = btn.dataset;
+    if (action === 'edit') openForm(id);
+    if (action === 'mark-used') markUsed(id);
+    if (action === 'delete') deleteCoupon(id);
+  });
+
+  return item;
+}
+
+function formatExpiry(dateStr, state) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const label = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  if (state === 'expired') return `<span class="expiry--expired">Expired ${label}</span>`;
+  if (state === 'warning') return `<span class="expiry--warning">Expires ${label}</span>`;
+  return `<span>Expires ${label}</span>`;
+}
+
+function formatDiscount(c) {
+  if (c.discountType === 'percentage') return `${c.discountValue}% off`;
+  if (c.discountType === 'flat') return `€${c.discountValue} off`;
+  if (c.discountType === 'freeShipping') return 'Free shipping';
+  return '';
+}
+
+// Minimal XSS guard for values inserted via innerHTML
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+
+function openForm(id) {
+  editingId = id;
+  couponForm.reset();
+
+  if (id) {
+    StorageProvider.getAll().then(coupons => {
+      const c = coupons.find(x => x.id === id);
+      if (!c) return;
+      couponForm.brand.value = c.brand;
+      couponForm.code.value = c.code;
+      couponForm.discountValue.value = c.discountValue ?? '';
+      couponForm.discountType.value = c.discountType ?? 'percentage';
+      couponForm.expiryDate.value = c.expiryDate ?? '';
+      couponForm.minPurchase.value = c.minPurchase ?? '';
+      couponForm.terms.value = c.terms ?? '';
+      couponForm.sourceLink.value = c.sourceLink ?? '';
+    });
+  }
+
+  formSection.classList.remove('hidden');
+  listSection.classList.add('hidden');
+  couponForm.brand.focus();
+}
+
+function closeForm() {
+  editingId = null;
+  formSection.classList.add('hidden');
+  listSection.classList.remove('hidden');
+}
+
+async function handleSave(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(couponForm));
+
+  const coupon = {
+    brand: data.brand.trim(),
+    code: data.code.trim(),
+    discountValue: data.discountValue ? parseFloat(data.discountValue) : null,
+    discountType: data.discountType || 'percentage',
+    expiryDate: data.expiryDate || null,
+    minPurchase: data.minPurchase ? parseFloat(data.minPurchase) : null,
+    terms: data.terms.trim() || null,
+    sourceLink: data.sourceLink.trim() || null,
+  };
+
+  await StorageProvider.save({ ...coupon, id: editingId });
+  closeForm();
+  await renderCouponList();
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+async function markUsed(id) {
+  const coupons = await StorageProvider.getAll();
+  const c = coupons.find(x => x.id === id);
+  if (!c) return;
+  await StorageProvider.save({ ...c, status: 'used' });
+  await renderCouponList();
+}
+
+async function deleteCoupon(id) {
+  await StorageProvider.delete(id);
+  await renderCouponList();
+}
+
+// ── CSV export / import (stubs — implemented in a later step) ─────────────────
+
+async function handleExport() {
+  // TODO: implement in CSV step
+}
+
+async function handleImport(e) {
+  // TODO: implement in CSV step
+}
