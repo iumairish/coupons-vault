@@ -2,8 +2,8 @@
    but defined locally since this stylesheet runs in page context, not the extension popup. */
 
 :root {
-  --cv-color-primary: #4f6ef7;
-  --cv-color-primary-hover: #3a57e8;
+  --cv-color-primary: #6c63ff;
+  --cv-color-primary-hover: #5a52d5;
   --cv-color-bg: #ffffff;
   --cv-color-border: #e0e0e0;
   --cv-color-text: #1a1a1a;

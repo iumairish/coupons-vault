@@ -128,28 +128,28 @@ function makeSectionLabel(text) {
 
 function makeCouponItem(c, state) {
   const item = document.createElement('div');
-  item.className = 'coupon-item' + (state !== 'active' ? ` coupon-item--${state}` : '');
+  item.className = `coupon-item coupon-item--${state}`;
   if (c.status === 'used') item.classList.add('coupon-item--used');
 
   const expiryLabel = formatExpiry(c.expiryDate, state);
+  const discountDisplay = formatDiscountLarge(c);
 
   item.innerHTML = `
     <div class="coupon-item__header">
       <span class="coupon-item__brand">${esc(c.brand)}</span>
       <div class="coupon-item__actions">
-        <button class="btn btn--ghost btn--sm" data-action="edit" data-id="${c.id}">Edit</button>
-        <button class="btn btn--ghost btn--sm" data-action="mark-used" data-id="${c.id}"
-          ${c.status === 'used' ? 'disabled' : ''}>Used</button>
-        <button class="btn btn--danger btn--sm" data-action="delete" data-id="${c.id}">✕</button>
+        <button class="btn btn--icon" data-action="edit" data-id="${c.id}" title="Edit">✏️</button>
+        <button class="btn btn--icon" data-action="mark-used" data-id="${c.id}" title="Mark as used"
+          ${c.status === 'used' ? 'disabled' : ''}>✓</button>
+        <button class="btn btn--icon btn--icon--danger" data-action="delete" data-id="${c.id}" title="Delete">🗑️</button>
       </div>
     </div>
+    ${discountDisplay ? `<div class="coupon-item__discount">${discountDisplay}</div>` : ''}
     <div class="coupon-item__code-row">
-      <span class="coupon-item__code">${esc(c.code)}</span>
+      <span class="coupon-item__code" data-action="copy" data-id="${c.id}" data-code="${esc(c.code)}">${esc(c.code)}</span>
       <button class="btn btn--primary btn--sm" data-action="fill" data-id="${c.id}" data-code="${esc(c.code)}">Fill</button>
-      <button class="btn btn--ghost btn--sm" data-action="copy" data-id="${c.id}" data-code="${esc(c.code)}">Copy</button>
     </div>
     <div class="coupon-item__meta">
-      ${c.discountValue ? `<span>${formatDiscount(c)}</span>` : ''}
       ${expiryLabel}
       ${c.minPurchase ? `<span>Min. €${c.minPurchase}</span>` : ''}
     </div>
@@ -182,6 +182,15 @@ function formatDiscount(c) {
   if (c.discountType === 'percentage') return `${c.discountValue}% off`;
   if (c.discountType === 'flat') return `€${c.discountValue} off`;
   if (c.discountType === 'freeShipping') return 'Free shipping';
+  return '';
+}
+
+// Large prominent discount string shown on the card
+function formatDiscountLarge(c) {
+  if (!c.discountValue && c.discountType !== 'freeShipping') return '';
+  if (c.discountType === 'percentage') return `${c.discountValue}%`;
+  if (c.discountType === 'flat') return `€${c.discountValue}`;
+  if (c.discountType === 'freeShipping') return '🚚 Free shipping';
   return '';
 }
 
@@ -265,9 +274,10 @@ function fillCode(btn) {
 
 function copyCode(btn) {
   const code = btn.dataset.code;
+  const original = btn.textContent;
   navigator.clipboard.writeText(code).then(() => {
     btn.textContent = 'Copied!';
-    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    setTimeout(() => { btn.textContent = original; }, 1500);
   });
 }
 
