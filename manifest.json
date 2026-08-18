@@ -4,14 +4,7 @@
   "version": "0.1.0",
   "description": "Store and surface discount codes on matching retailer sites.",
   "permissions": ["storage", "activeTab", "tabs"],
-  "host_permissions": [
-    "*://*.amazon.com/*",
-    "*://*.amazon.de/*",
-    "*://*.bestsecret.com/*",
-    "*://*.c-and-a.com/*",
-    "*://*.zalando.com/*",
-    "*://*.zalando.de/*"
-  ],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Coupons Vault"
@@ -21,14 +14,7 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "*://*.amazon.com/*",
-        "*://*.amazon.de/*",
-        "*://*.bestsecret.com/*",
-        "*://*.c-and-a.com/*",
-        "*://*.zalando.com/*",
-        "*://*.zalando.de/*"
-      ],
+      "matches": ["<all_urls>"],
       "js": ["lib/matcher.js", "lib/fieldDetector.js", "content/content-script.js"],
       "css": ["content/badge.css"],
       "run_at": "document_idle"
