@@ -209,12 +209,32 @@ async function deleteCoupon(id) {
   await renderCouponList();
 }
 
-// ── CSV export / import (stubs — implemented in a later step) ─────────────────
+// ── CSV export ────────────────────────────────────────────────────────────────
 
 async function handleExport() {
-  // TODO: implement in CSV step
+  const coupons = await StorageProvider.getAll();
+  if (coupons.length === 0) {
+    alert('No coupons to export.');
+    return;
+  }
+
+  const csvText = CSV.exportCoupons(coupons);
+  const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `coupons-vault-${datestamp()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
+function datestamp() {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+// ── CSV import (stub — implemented in next step) ──────────────────────────────
+
 async function handleImport(e) {
-  // TODO: implement in CSV step
+  // TODO: implement in CSV import step
 }
