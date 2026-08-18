@@ -252,6 +252,17 @@ textarea { resize: vertical; }
   font-size: var(--font-size-sm);
 }
 
+/* Import status */
+.import-status {
+  font-size: var(--font-size-xs);
+  text-align: center;
+  padding: var(--spacing-xs) var(--spacing-lg);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+}
+.import-status--warn { color: var(--color-warning); }
+
 /* Footer */
 .footer {
   display: flex;

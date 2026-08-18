@@ -233,8 +233,41 @@ function datestamp() {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
-// ── CSV import (stub — implemented in next step) ──────────────────────────────
+// ── CSV import ────────────────────────────────────────────────────────────────
 
 async function handleImport(e) {
-  // TODO: implement in CSV import step
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const text = await file.text();
+  const existing = await StorageProvider.getAll();
+  const { imported, skipped } = CSV.importCoupons(text, existing);
+
+  for (const coupon of imported) {
+    // Strip the exported id so storage assigns a fresh one
+    const { id: _id, ...rest } = coupon;
+    await StorageProvider.save(rest);
+  }
+
+  // Reset input so the same file can be re-selected if needed
+  e.target.value = '';
+
+  await renderCouponList();
+  showImportStatus(imported.length, skipped);
+}
+
+function showImportStatus(importedCount, skipped) {
+  const el = document.getElementById('import-status');
+  const parts = [];
+
+  if (importedCount > 0) parts.push(`Imported ${importedCount}`);
+  if (skipped.length > 0) parts.push(`${skipped.length} duplicate${skipped.length > 1 ? 's' : ''} skipped`);
+  if (importedCount === 0 && skipped.length === 0) parts.push('Nothing to import');
+
+  el.textContent = parts.join(' · ');
+  el.className = 'import-status';
+  el.classList.toggle('import-status--warn', importedCount === 0);
+
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.add('hidden'), 4000);
 }
