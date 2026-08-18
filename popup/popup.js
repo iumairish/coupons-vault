@@ -8,6 +8,7 @@ const couponForm = document.getElementById('coupon-form');
 
 let editingId = null;       // null = adding new, string = editing existing
 let currentHostname = null; // hostname of the active tab, detected on load
+let currentTabId = null;    // tab ID of the active tab, used for Fill messaging
 let filterActive = false;   // true = show only coupons matching currentHostname
 
 // ── Init ─────────────────────────────────────────────────────────────────────
@@ -40,7 +41,9 @@ async function getActiveTabHostname() {
   return new Promise(resolve => {
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       try {
-        const url = tabs[0]?.url;
+        const tab = tabs[0];
+        currentTabId = tab?.id ?? null;
+        const url = tab?.url;
         resolve(url ? new URL(url).hostname : null);
       } catch {
         resolve(null);
@@ -142,6 +145,7 @@ function makeCouponItem(c, state) {
     </div>
     <div class="coupon-item__code-row">
       <span class="coupon-item__code">${esc(c.code)}</span>
+      <button class="btn btn--primary btn--sm" data-action="fill" data-id="${c.id}" data-code="${esc(c.code)}">Fill</button>
       <button class="btn btn--ghost btn--sm" data-action="copy" data-id="${c.id}" data-code="${esc(c.code)}">Copy</button>
     </div>
     <div class="coupon-item__meta">
@@ -156,6 +160,7 @@ function makeCouponItem(c, state) {
     if (!btn) return;
     const { action, id } = btn.dataset;
     if (action === 'edit') openForm(id);
+    if (action === 'fill') fillCode(btn);
     if (action === 'copy') copyCode(btn);
     if (action === 'mark-used') markUsed(id);
     if (action === 'delete') deleteCoupon(id);
@@ -242,6 +247,21 @@ async function handleSave(e) {
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
+
+function fillCode(btn) {
+  const code = btn.dataset.code;
+  if (!currentTabId) { copyCode(btn); return; }
+
+  chrome.tabs.sendMessage(currentTabId, { action: 'fill', code }, response => {
+    if (chrome.runtime.lastError || !response?.filled) {
+      // Content script not running on this page or no field found — fall back to copy
+      copyCode(btn);
+      return;
+    }
+    btn.textContent = 'Filled!';
+    setTimeout(() => { btn.textContent = 'Fill'; }, 1500);
+  });
+}
 
 function copyCode(btn) {
   const code = btn.dataset.code;

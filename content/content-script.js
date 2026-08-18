@@ -12,6 +12,18 @@
   injectBadge(matches);
 })();
 
+// Listen for fill requests from the popup
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.action !== 'fill') return;
+  const field = FieldDetector.detect();
+  if (!field) { sendResponse({ filled: false }); return; }
+  field.focus();
+  field.value = msg.code;
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  field.dispatchEvent(new Event('change', { bubbles: true }));
+  sendResponse({ filled: true });
+});
+
 function injectBadge(coupons) {
   if (document.getElementById('cv-badge')) return; // already injected
 
