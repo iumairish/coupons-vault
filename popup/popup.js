@@ -16,13 +16,20 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
   currentHostname = await getActiveTabHostname();
+
+  // Auto-filter once on load if the current site has matching coupons
+  if (currentHostname) {
+    const all = await StorageProvider.getAll();
+    filterActive = Matcher.findMatches(currentHostname, all).length > 0;
+  }
+
   await renderCouponList();
 
   document.getElementById('btn-add').addEventListener('click', () => openForm(null));
   document.getElementById('btn-cancel').addEventListener('click', closeForm);
   document.getElementById('btn-export').addEventListener('click', handleExport);
   document.getElementById('import-file').addEventListener('change', handleImport);
-  document.getElementById('btn-show-all').addEventListener('click', () => {
+  document.getElementById('btn-back').addEventListener('click', () => {
     filterActive = false;
     renderCouponList();
   });
@@ -48,13 +55,9 @@ async function renderCouponList() {
   const allCoupons = await StorageProvider.getAll();
   couponList.innerHTML = '';
 
-  // Decide whether to filter
-  const matched = currentHostname ? Matcher.findMatches(currentHostname, allCoupons) : [];
-  const hasMatches = matched.length > 0;
-
-  if (hasMatches && !filterActive) {
-    filterActive = true; // auto-activate filter when landing on a matching site
-  }
+  const matched = filterActive && currentHostname
+    ? Matcher.findMatches(currentHostname, allCoupons)
+    : null;
 
   // Update filter bar
   const filterBar = document.getElementById('filter-bar');
@@ -66,7 +69,7 @@ async function renderCouponList() {
     filterBar.classList.add('hidden');
   }
 
-  const coupons = filterActive ? matched : allCoupons;
+  const coupons = matched ?? allCoupons;
 
   if (coupons.length === 0) {
     emptyState.classList.remove('hidden');
