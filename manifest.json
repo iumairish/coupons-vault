@@ -3,7 +3,7 @@
   "name": "Coupons Vault",
   "version": "0.1.0",
   "description": "Store and surface discount codes on matching retailer sites.",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "tabs"],
   "host_permissions": [
     "*://*.amazon.com/*",
     "*://*.amazon.de/*",

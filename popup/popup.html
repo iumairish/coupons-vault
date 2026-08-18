@@ -50,6 +50,10 @@
         <textarea id="f-terms" name="terms" rows="2" placeholder="Optional"></textarea>
       </div>
       <div class="form-group">
+        <label for="f-brand-urls">Brand URL(s)</label>
+        <input type="text" id="f-brand-urls" name="brandUrls" placeholder="e.g. amazon.de, amazon.com" />
+      </div>
+      <div class="form-group">
         <label for="f-source">Source Link</label>
         <input type="url" id="f-source" name="sourceLink" placeholder="Optional" />
       </div>
@@ -59,6 +63,12 @@
       </div>
     </form>
   </section>
+
+  <!-- Filter bar: shown when popup is on a matching site -->
+  <div id="filter-bar" class="filter-bar hidden">
+    <span id="filter-label"></span>
+    <button id="btn-show-all" class="btn btn--ghost btn--sm">Show all</button>
+  </div>
 
   <!-- Coupon list -->
   <section id="list-section">
@@ -77,6 +87,7 @@
   </footer>
 
   <script src="../lib/storage.js"></script>
+  <script src="../lib/matcher.js"></script>
   <script src="../lib/csv.js"></script>
   <script src="popup.js"></script>
 </body>

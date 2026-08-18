@@ -6,27 +6,67 @@ const couponList = document.getElementById('coupon-list');
 const emptyState = document.getElementById('empty-state');
 const couponForm = document.getElementById('coupon-form');
 
-let editingId = null; // null = adding new, string = editing existing
+let editingId = null;       // null = adding new, string = editing existing
+let currentHostname = null; // hostname of the active tab, detected on load
+let filterActive = false;   // true = show only coupons matching currentHostname
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
+  currentHostname = await getActiveTabHostname();
   await renderCouponList();
 
   document.getElementById('btn-add').addEventListener('click', () => openForm(null));
   document.getElementById('btn-cancel').addEventListener('click', closeForm);
   document.getElementById('btn-export').addEventListener('click', handleExport);
   document.getElementById('import-file').addEventListener('change', handleImport);
+  document.getElementById('btn-show-all').addEventListener('click', () => {
+    filterActive = false;
+    renderCouponList();
+  });
   couponForm.addEventListener('submit', handleSave);
+}
+
+async function getActiveTabHostname() {
+  return new Promise(resolve => {
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      try {
+        const url = tabs[0]?.url;
+        resolve(url ? new URL(url).hostname : null);
+      } catch {
+        resolve(null);
+      }
+    });
+  });
 }
 
 // ── List rendering ────────────────────────────────────────────────────────────
 
 async function renderCouponList() {
-  const coupons = await StorageProvider.getAll();
+  const allCoupons = await StorageProvider.getAll();
   couponList.innerHTML = '';
+
+  // Decide whether to filter
+  const matched = currentHostname ? Matcher.findMatches(currentHostname, allCoupons) : [];
+  const hasMatches = matched.length > 0;
+
+  if (hasMatches && !filterActive) {
+    filterActive = true; // auto-activate filter when landing on a matching site
+  }
+
+  // Update filter bar
+  const filterBar = document.getElementById('filter-bar');
+  const filterLabel = document.getElementById('filter-label');
+  if (filterActive && currentHostname) {
+    filterBar.classList.remove('hidden');
+    filterLabel.textContent = `Showing for ${currentHostname}`;
+  } else {
+    filterBar.classList.add('hidden');
+  }
+
+  const coupons = filterActive ? matched : allCoupons;
 
   if (coupons.length === 0) {
     emptyState.classList.remove('hidden');
@@ -158,6 +198,7 @@ function openForm(id) {
       couponForm.discountType.value = c.discountType ?? 'percentage';
       couponForm.expiryDate.value = c.expiryDate ?? '';
       couponForm.minPurchase.value = c.minPurchase ?? '';
+      couponForm.brandUrls.value = c.brandUrls ?? '';
       couponForm.terms.value = c.terms ?? '';
       couponForm.sourceLink.value = c.sourceLink ?? '';
     });
@@ -185,6 +226,7 @@ async function handleSave(e) {
     discountType: data.discountType || 'percentage',
     expiryDate: data.expiryDate || null,
     minPurchase: data.minPurchase ? parseFloat(data.minPurchase) : null,
+    brandUrls: data.brandUrls.trim() || null,
     terms: data.terms.trim() || null,
     sourceLink: data.sourceLink.trim() || null,
   };
