@@ -24,9 +24,11 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   }
 });
 
-// Clear the badge when a tab starts navigating to a new page
+// Clear the badge when the tab navigates to a new URL.
+// Checking changeInfo.url (only present on actual URL changes) avoids clearing
+// the badge on sub-resource loads and dynamic page activity that also fire 'loading'.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === 'loading') {
+  if (changeInfo.url) {
     chrome.action.setBadgeText({ text: '', tabId });
   }
 });
