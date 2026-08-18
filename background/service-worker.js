@@ -3,10 +3,30 @@
 // This file exists to satisfy the manifest and can grow in Phase 2 (e.g. alarm-based expiry checks).
 
 chrome.runtime.onInstalled.addListener(() => {
-  // Initialise storage with an empty coupons array if not already set
   chrome.storage.local.get('coupons', result => {
     if (!result.coupons) {
       chrome.storage.local.set({ coupons: [] });
     }
   });
+});
+
+// Set the toolbar badge when the content script reports matching coupons
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  if (msg.action !== 'updateBadge') return;
+  const tabId = sender.tab?.id;
+  if (!tabId) return;
+
+  if (msg.count > 0) {
+    chrome.action.setBadgeText({ text: String(msg.count), tabId });
+    chrome.action.setBadgeBackgroundColor({ color: '#4f6ef7', tabId });
+  } else {
+    chrome.action.setBadgeText({ text: '', tabId });
+  }
+});
+
+// Clear the badge when a tab starts navigating to a new page
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === 'loading') {
+    chrome.action.setBadgeText({ text: '', tabId });
+  }
 });

@@ -7,8 +7,11 @@
   const coupons = result.coupons ?? [];
 
   const matches = Matcher.findMatches(hostname, coupons);
-  if (matches.length === 0) return;
 
+  // Tell the service worker to update the toolbar icon badge for this tab
+  chrome.runtime.sendMessage({ action: 'updateBadge', count: matches.length });
+
+  if (matches.length === 0) return;
   injectBadge(matches);
 })();
 
