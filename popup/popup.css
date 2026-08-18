@@ -19,20 +19,20 @@
   --color-text-muted: #71717a;
   --color-ghost-hover: #f4f4f5;
 
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 12px;
-  --spacing-lg: 16px;
-  --spacing-xl: 24px;
+  --spacing-xs: 3px;
+  --spacing-sm: 6px;
+  --spacing-md: 9px;
+  --spacing-lg: 12px;
+  --spacing-xl: 18px;
 
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-base: 13px;
-  --font-size-md: 14px;
-  --font-size-lg: 22px;
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-base: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 17px;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
 
   --popup-width: 340px;
 }
@@ -185,7 +185,6 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-tint);
 }
 
 textarea { resize: vertical; }
@@ -213,17 +212,16 @@ textarea { resize: vertical; }
 /* Coupon list */
 #list-section {
   flex: 1;
-  padding: var(--spacing-md) 0 var(--spacing-sm);
+  padding: var(--spacing-sm) 0 var(--spacing-xs);
 }
 
 /* Cards */
 .coupon-item {
   background: var(--color-bg);
-  border-radius: var(--radius-md);
-  margin: 0 var(--spacing-md) var(--spacing-sm);
-  padding: var(--spacing-md);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
-  border-left: 4px solid var(--color-strip-active);
+  border-radius: var(--radius-sm);
+  margin: 0 var(--spacing-sm) var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-left: 3px solid var(--color-strip-active);
 }
 
 .coupon-item--warning { border-left-color: var(--color-strip-warning); }
