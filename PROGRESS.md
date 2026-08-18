@@ -37,7 +37,7 @@ Short notes on key choices made along the way, so future sessions don't re-litig
 - Vanilla JS/HTML/CSS across all phases (no framework) — extension-only, no separate dashboard planned
 - Local storage (chrome.storage.local) for V1, abstracted for future DB swap-in
 - CSV export/import for backup + future migration path
-- Host permissions: declared allowlist (not <all_urls>) — initial brands: Amazon, Zalando, BestSecret, C&A
+- Host permissions: switched to <all_urls> — allowlist was impractical since new coupon brands couldn't trigger the badge without a manifest update
 - No ES modules in content scripts — matcher.js loaded via manifest js array into shared global scope
 - Popup uses plain script tags (storage.js loaded first, then popup.js) — no bundler needed
 - StorageProvider exposed as a global IIFE (not a module) so it works in both popup and can be reused elsewhere without a bundler
